@@ -1,26 +1,45 @@
-use std::{collections::HashMap, io::stdin};
+use std::{collections::HashMap, f32::consts::E, io::stdin};
 
 use regex::Regex;
 
 fn main() {
 
-    //Read user input:
+    let mut input_flag: bool = false;
 
-    let mut infix: String = String::new();
-    println!("Enter your expression (infix):");
-    stdin().read_line(&mut infix).expect("Unable to read expression");
-    
-    // Extract lexemes from data:
+    while input_flag != true {
 
-    // Removed whitespace from infix
-    let mut infix: String = "(3+ 4545 / 3) * {64} / 1 + [2] (33 33 - 2)".to_string(); // Placeholder expression
-    infix = infix.split(' ').collect();
+        //Read user input:  
+        let mut infix: String = String::new();
+        println!("Enter your expression (infix):");
+        stdin().read_line(&mut infix).expect("Unable to read expression");
 
-    // Filtered by lexeme
-    let re = Regex::new(r"\d+|/|\+|-|\*|\^|√|\(|\)|\[|\]|\{|\}").unwrap();
-    let matches: Vec<&str> = re.find_iter(&infix).map(|m| m.as_str()).collect();
+        // Extract lexemes from data:
 
-    println!("{:?}", matches);
+        // Removed whitespace from infix
+        let mut infix: String = "(3+ 4545 / 3 ) * {64 } / 1 + [2 ] ( 33 33 - 2)".to_string(); // Placeholder expression
+        infix = infix.split(' ').collect();
+
+        // Filtered by lexeme
+        let re = Regex::new(r"\d+|/|\+|-|\*|\^|√|\(|\)|\[|\]|\{|\}").unwrap();
+        let matches: Vec<&str> = re.find_iter(&infix).map(|m| m.as_str()).collect();
+
+        println!("{:?}", matches);
+
+        match is_right(matches) {
+            Ok(true) => {
+                input_flag = true;
+                println!("Expression matches!")
+            }
+
+            Err(e) => {
+                println!("{}", format!("{e}, try again."));
+            }
+
+            Ok(false) => { /*Nothing here*/ }
+        };
+
+        println!("{}", input_flag)    
+    }
 
 }
 struct PermittedDelimiters {
@@ -30,19 +49,22 @@ struct PermittedDelimiters {
     end_del: &'static str,
     end_counter: u8,
 
-    is_match: bool
+    is_match: bool,
+
+    name: &'static str
 }
 
-fn is_right(expression: Vec<&str>) -> bool {
+fn is_right(expression: Vec<&str>) -> Result<bool, String> {
 
-    let mut parenthesis = PermittedDelimiters{ start_del: "(", end_del: ")", start_counter: 0, end_counter: 0, is_match: false };
-    let mut brackets = PermittedDelimiters{ start_del: "[", end_del: "]", start_counter: 0, end_counter: 0, is_match: false };
-    let mut braces = PermittedDelimiters{ start_del: "{", end_del: "}", start_counter: 0, end_counter: 0, is_match: false };
+    let mut parenthesis = PermittedDelimiters{ start_del: "(", end_del: ")", start_counter: 0, end_counter: 0, is_match: false, name: "parenthesis" };
+    let mut brackets = PermittedDelimiters{ start_del: "[", end_del: "]", start_counter: 0, end_counter: 0, is_match: false, name: "brackets" };
+    let mut braces = PermittedDelimiters{ start_del: "{", end_del: "}", start_counter: 0, end_counter: 0, is_match: false, name: "braces" };
 
     let mut delimiters: [&mut PermittedDelimiters;3] = [&mut parenthesis, &mut brackets, &mut braces];
 
-    for lexeme in expression {
-        for del in delimiters.iter_mut() {
+    for del in delimiters.iter_mut() {
+        for lexeme in expression.clone() {
+
             if lexeme == del.start_del {
                 del.start_counter += 1;
             }
@@ -54,16 +76,23 @@ fn is_right(expression: Vec<&str>) -> bool {
             if del.start_counter == del.end_counter {
                 del.is_match = true;
             }
+
+            else {
+                del.is_match = false;
+            }
         }
+
+        println!("{} start: {}, end: {}", del.name, del.start_counter, del.end_counter);
     }
 
     if parenthesis.is_match && brackets.is_match && braces.is_match {
-        return true;
+        return Ok(true)
     }
 
-    return false   
+    return Err("unclosed delimiter".to_string())   
 }
 
+    
 /*
 entregar programa en eq:
 cuando el usuario le ponga una expresion infija
