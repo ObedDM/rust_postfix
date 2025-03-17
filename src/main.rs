@@ -100,6 +100,11 @@ fn is_right(expression: &[&str]) -> Result<bool, String> {
                     return Err(format!("missing operand, or duplicated operator, at {}", expression[index+1]) + sqrt_case)  
                 }
             }
+
+            // Checks for non supported lexemes (so uh just letters i guess):
+            else if !(["(", ")", "[", "]", "{", "}"].contains(&lexeme)) && !(is_numeric(&lexeme)) {
+                return Err(format!("unsupported lexeme: {}", expression[index]))
+            }
         }
     }
 
