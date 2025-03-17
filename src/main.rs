@@ -1,43 +1,44 @@
-use std::{collections::HashMap, f32::consts::E, io::stdin};
+use std::{collections::{HashMap, VecDeque}, io::stdin};
 
 use regex::Regex;
 
 fn main() {
-
     let mut input_flag: bool = false;
+    let mut matches: Vec<&str> = vec![];
+    let mut infix: String = String::new();
 
     while input_flag == false {
 
-        //Read user input:  
-        let mut infix: String = String::new();
+        //Read user input:
         println!("Enter your expression (infix):");
         stdin().read_line(&mut infix).expect("Unable to read expression");
 
         // Extract lexemes from data:
 
-        // Removed whitespace from infix
-        let mut infix: String = "(3+ 4545 / 4 ) * { 2√6 * 2√64 } / 1 + [2 ] ( 33 33 - 2)".to_string(); // Placeholder expression
+        // Removes whitespace from infix     
+        infix = "(3 + 4545 / 4) * {2√6 * 2√64} / 1 + 2 * (3333 - 2)".to_string(); // Placeholder expression
         infix = infix.split(' ').collect();
 
         // Filtered by lexeme
         let re = Regex::new(r"\w+|\d+|/|\+|-|\*|\^|√|\(|\)|\[|\]|\{|\}").unwrap(); //Accepts characters so it can warn about their usage at is_right()
-        let matches: Vec<&str> = re.find_iter(&infix).map(|m| m.as_str()).collect();
-
-        println!("{:?}", matches);
+        matches = re.find_iter(&infix).map(|m| m.as_str()).collect();
 
         match is_right(&matches) {
             Ok(true) => {
                 input_flag = true;
-                println!("Expression matches!")
             }
 
             Err(e) => {
-                println!("{}", format!("{e}. Try again."));
+                println!("{}", format!("{e}. Try again.\n"));
             }
 
             Ok(false) => { /*Nothing here*/ }
         };
     }
+
+    let postfix: Vec<&str> = to_postfix(&matches); // Converts infix input expression into postfix
+
+    println!("Postfix: {}", postfix.join(" "))
 
 }
 struct PermittedDelimiters {
@@ -120,8 +121,55 @@ fn is_right(expression: &[&str]) -> Result<bool, String> {
 fn is_numeric(s: &str) -> bool {
     s.chars().all(|c| c.is_digit(10))
 }
+
+fn to_postfix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
+    let mut output: Vec<&str> = Vec::new();
+    let mut stack: VecDeque<&str> = VecDeque::new();
     
-/*
+    let precedence: HashMap<&str, i32> = HashMap::from([
+        ("+", 1), ("-", 1),
+        ("*", 2), ("/", 2),
+        ("^", 3), ("√", 3),
+        ("(", 0), (")", 0),
+        ("[", 0), ("]", 0),
+        ("{", 0), ("}", 0)
+    ]);
+    
+    for &token in expression {
+        if token.chars().all(|c| c.is_numeric()) {
+            output.push(token);
+        } else if token == "(" || token == "[" || token == "{" {
+            stack.push_back(token);
+        } else if token == ")" || token == "]" || token == "}" {
+            while let Some(&top) = stack.back() {
+                if (top == "(" && token == ")") || (top == "[" && token == "]") || (top == "{" && token == "}") {
+                    break;
+                }
+                output.push(stack.pop_back().unwrap());
+            }
+            stack.pop_back(); // Remove matching opening bracket
+        } else {
+            while let Some(&top) = stack.back() {
+                if precedence[&top] >= precedence[&token] {
+                    output.push(stack.pop_back().unwrap());
+                } else {
+                    break;
+                }
+            }
+            stack.push_back(token);
+        }
+    }
+    while let Some(op) = stack.pop_back() {
+        output.push(op);
+    }
+    output
+}
+
+fn to_prefix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
+    todo!()
+}
+    
+/*expression: &[&str]
 entregar programa en eq:
 cuando el usuario le ponga una expresion infija
 1. evaluar si la expresion esta correctamente escrita [DONE]
@@ -132,6 +180,6 @@ cuando el usuario le ponga una expresion infija
 6.- permitir numeros de N digitos [DONE]
 7.- debe dar igual si tienen o no espacios [DONE]
 
-usar re.findall [DONE]
+usar re.findall [DONE] (used re.find_iter())
 */
 
