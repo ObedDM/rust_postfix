@@ -23,8 +23,8 @@ cuando el usuario le ponga una expresion infija
 2. si esta correctamente escrita, debe de mostrarme su notacion (dar en prefija postfija infija)
 3.- evaluar la expresion (en postfija obvio)
 4.- debe permitir agrupadores (parentesis, corchete, llave) [DONE]
-5.- permitir suma resta division multiplicacion potencia raiz
-6.- permitir numeros de N digitos
+5.- permitir suma resta division multiplicacion potencia raiz [DONE]
+6.- permitir numeros de N digitos [DONE]
 7.- debe dar igual si tienen o no espacios [DONE]
 
 usar re.findall [DONE]
