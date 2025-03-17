@@ -1,10 +1,19 @@
+use std::io::stdin;
+
 use regex::Regex;
 
 fn main() {
+
+    //Read user input:
+
+    let mut infix: String = String::new();
+    println!("Enter your expression (infix):");
+    stdin().read_line(&mut infix).expect("Unable to read expression");
+    
     // Extract lexemes from data:
 
     // Removed whitespace from infix
-    let mut infix: String = "(3+ 4545 / 3) * {64} / 1 + [2] (33 33 - 2)".to_string();    
+    let mut infix: String = "(3+ 4545 / 3) * {64} / 1 + [2] (33 33 - 2)".to_string(); // Placeholder expression
     infix = infix.split(' ').collect();
 
     // Filtered by lexeme
