@@ -124,7 +124,7 @@ fn is_numeric(s: &str) -> bool {
 /*
 entregar programa en eq:
 cuando el usuario le ponga una expresion infija
-1. evaluar si la expresion esta correctamente escrita
+1. evaluar si la expresion esta correctamente escrita [DONE]
 2. si esta correctamente escrita, debe de mostrarme su notacion (dar en prefija postfija infija)
 3.- evaluar la expresion (en postfija obvio)
 4.- debe permitir agrupadores (parentesis, corchete, llave) [DONE]
