@@ -16,7 +16,7 @@ fn main() {
         // Extract lexemes from data:
 
         // Removes whitespace from infix     
-        infix = "(3 + 4545 / 4) * {2√6 * 2√64} / 1 + 2 * (3333 - 2)".to_string(); // Placeholder expression
+        infix = "(3 + 4545 / 4) * {43√6 * 23√64} / 1 + 2 * (3333 - 2)".to_string(); // Placeholder expression
         infix = infix.split(' ').collect();
 
         // Filtered by lexeme
@@ -38,7 +38,11 @@ fn main() {
 
     let postfix: Vec<&str> = to_postfix(&matches); // Converts infix input expression into postfix
 
-    println!("Postfix: {}", postfix.join(" "))
+    let postfix_result = evaluate_postfix(postfix.clone());
+
+    println!("Infix: {}", matches.join(" "));
+    println!("Postfix: {}", postfix.join(" "));
+    println!("result: {}", postfix_result);
 
 }
 struct PermittedDelimiters {
@@ -168,13 +172,38 @@ fn to_postfix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
 fn to_prefix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
     todo!()
 }
+
+fn evaluate_postfix(expression: Vec<&str>) -> f64 {
+    let mut stack: Vec<f64> = Vec::new();
+    
+    for token in expression {
+        if let Ok(num) = token.parse::<f64>() {
+            stack.push(num);
+        } else {
+            let b = stack.pop().expect("Invalid expression");
+            let a = stack.pop().expect("Invalid expression");
+            let result = match token {
+                "+" => a + b,
+                "-" => a - b,
+                "*" => a * b,
+                "/" => a / b,
+                "^" => a.powf(b),
+                "√" => b.powf(1.0 / a),
+                _ => panic!("Unknown operator: {}", token),
+            };
+            stack.push(result);
+        }
+    }
+    
+    stack.pop().expect("Invalid expression")
+}
     
 /*expression: &[&str]
 entregar programa en eq:
 cuando el usuario le ponga una expresion infija
 1. evaluar si la expresion esta correctamente escrita [DONE]
 2. si esta correctamente escrita, debe de mostrarme su notacion (dar en prefija postfija infija)
-3.- evaluar la expresion (en postfija obvio)
+3.- evaluar la expresion (en postfija obvio) [DONE]
 4.- debe permitir agrupadores (parentesis, corchete, llave) [DONE]
 5.- permitir suma resta division multiplicacion potencia raiz [DONE]
 6.- permitir numeros de N digitos [DONE]
