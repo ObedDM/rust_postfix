@@ -4,10 +4,10 @@ use regex::Regex;
 
 fn main() {
     let mut input_flag: bool = false;
-    let mut matches: Vec<&str> = vec![];
-    let mut infix: String = String::new();
+    let mut matches: Vec<String> = vec![];
 
     while input_flag == false {
+        let mut infix = String::new();
 
         //Read user input:
         println!("Enter your expression (infix):");
@@ -16,33 +16,30 @@ fn main() {
         // Extract lexemes from data:
 
         // Removes whitespace from infix     
-        infix = "(3 + 4545 / 4) * {43√6 * 23√64} / 1 + 2 * (3333 - 2)".to_string(); // Placeholder expression
-        infix = infix.split(' ').collect();
+        let new_infix = infix.trim().split_whitespace().collect::<String>();
 
-        // Filtered by lexeme
+
+        // Filter by lexeme
         let re = Regex::new(r"\w+|\d+|/|\+|-|\*|\^|√|\(|\)|\[|\]|\{|\}").unwrap(); //Accepts characters so it can warn about their usage at is_right()
-        matches = re.find_iter(&infix).map(|m| m.as_str()).collect();
+        matches.clear();
+        matches.extend(re.find_iter(&new_infix).map(|m| m.as_str().to_string()));
 
         match is_right(&matches) {
-            Ok(true) => {
-                input_flag = true;
-            }
-
-            Err(e) => {
-                println!("{}", format!("{e}. Try again.\n"));
-            }
-
+            Ok(true) => input_flag = true,
+            Err(e) => println!("{}", format!("{e}. Try again.\n")),
             Ok(false) => { /*Nothing here*/ }
         };
     }
 
     let postfix: Vec<&str> = to_postfix(&matches); // Converts infix input expression into postfix
-
+    let prefix: Vec<&str> = to_prefix(&matches); // Converts infix input expression into prefix
+    
     let postfix_result = evaluate_postfix(postfix.clone());
 
     println!("Infix: {}", matches.join(" "));
+    println!("Prefix: {}", prefix.join(" "));
     println!("Postfix: {}", postfix.join(" "));
-    println!("result: {}", postfix_result);
+    println!("Result: {}", postfix_result);
 
 }
 struct PermittedDelimiters {
@@ -52,17 +49,15 @@ struct PermittedDelimiters {
     end_del: &'static str,
     end_counter: u8,
 
-    is_match: bool,
-
-    name: &'static str
+    is_match: bool
 }
 
 // Checks if a given expression is correctly written (must be a vector of lexemes without whitespaces)
-fn is_right(expression: &[&str]) -> Result<bool, String> {
+fn is_right(expression: &[String]) -> Result<bool, String> {
 
-    let mut parenthesis = PermittedDelimiters{ start_del: "(", end_del: ")", start_counter: 0, end_counter: 0, is_match: false, name: "parenthesis" };
-    let mut brackets = PermittedDelimiters{ start_del: "[", end_del: "]", start_counter: 0, end_counter: 0, is_match: false, name: "brackets" };
-    let mut braces = PermittedDelimiters{ start_del: "{", end_del: "}", start_counter: 0, end_counter: 0, is_match: false, name: "braces" };
+    let mut parenthesis = PermittedDelimiters{ start_del: "(", end_del: ")", start_counter: 0, end_counter: 0, is_match: false };
+    let mut brackets = PermittedDelimiters{ start_del: "[", end_del: "]", start_counter: 0, end_counter: 0, is_match: false };
+    let mut braces = PermittedDelimiters{ start_del: "{", end_del: "}", start_counter: 0, end_counter: 0, is_match: false };
 
     let expression_size = expression.len();
 
@@ -91,9 +86,9 @@ fn is_right(expression: &[&str]) -> Result<bool, String> {
             // Checks for missing operand and repeated operators:
 
             // Checks if the current lexeme is an operator
-            if ["/", "+", "-", "*", "^", "√"].contains(&lexeme) {
+            if ["/", "+", "-", "*", "^", "√"].contains(&lexeme.as_str()) {
                 // If the next lexeme is also an operator, throws an Error (avoids next-lexeme higher than slice size)  
-                if (index + 1) <= (expression_size) && ["/", "+", "-", "*", "^", "√"].contains(&expression[index + 1]) {
+                if (index + 1) <= (expression_size) && ["/", "+", "-", "*", "^", "√"].contains(&expression[index + 1].as_str()) {
                     
                     let mut sqrt_case: &str = "";
 
@@ -107,7 +102,7 @@ fn is_right(expression: &[&str]) -> Result<bool, String> {
             }
 
             // Checks for non supported lexemes (so uh just letters i guess):
-            else if !(["(", ")", "[", "]", "{", "}"].contains(&lexeme)) && !(is_numeric(&lexeme)) {
+            else if !(["(", ")", "[", "]", "{", "}"].contains(&lexeme.as_str())) && !(is_numeric(&lexeme)) {
                 return Err(format!("unsupported lexeme: {}", expression[index]))
             }
         }
@@ -126,7 +121,7 @@ fn is_numeric(s: &str) -> bool {
     s.chars().all(|c| c.is_digit(10))
 }
 
-fn to_postfix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
+fn to_postfix<'a> (expression: &'a [String]) -> Vec<&'a str> {
     let mut output: Vec<&str> = Vec::new();
     let mut stack: VecDeque<&str> = VecDeque::new();
     
@@ -139,11 +134,11 @@ fn to_postfix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
         ("{", 0), ("}", 0)
     ]);
     
-    for &token in expression {
+    for token in expression {
         if token.chars().all(|c| c.is_numeric()) {
-            output.push(token);
+            output.push(token.as_str());
         } else if token == "(" || token == "[" || token == "{" {
-            stack.push_back(token);
+            stack.push_back(token.as_str());
         } else if token == ")" || token == "]" || token == "}" {
             while let Some(&top) = stack.back() {
                 if (top == "(" && token == ")") || (top == "[" && token == "]") || (top == "{" && token == "}") {
@@ -151,27 +146,87 @@ fn to_postfix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
                 }
                 output.push(stack.pop_back().unwrap());
             }
-            stack.pop_back(); // Remove matching opening bracket
+            stack.pop_back(); // Remove opening parenthesis/bracket/braces
         } else {
             while let Some(&top) = stack.back() {
-                if precedence[&top] >= precedence[&token] {
+                if precedence[&top] >= precedence[&token.as_str()] {
                     output.push(stack.pop_back().unwrap());
                 } else {
                     break;
                 }
             }
-            stack.push_back(token);
+            stack.push_back(token.as_str());
         }
     }
     while let Some(op) = stack.pop_back() {
         output.push(op);
     }
-    output
+    return output
 }
 
-fn to_prefix<'a> (expression: &'a [&'a str]) -> Vec<&'a str> {
-    todo!()
+fn to_prefix<'a>(expression: &'a [String]) -> Vec<&'a str> {
+    let mut output: Vec<&str> = Vec::new();
+    let mut stack: VecDeque<&str> = VecDeque::new(); // Change to store references
+
+    let precedence: HashMap<&str, i32> = HashMap::from([
+        ("+", 1), ("-", 1),
+        ("*", 2), ("/", 2),
+        ("^", 3), ("√", 3),
+        ("(", 0), (")", 0),
+        ("[", 0), ("]", 0),
+        ("{", 0), ("}", 0)
+    ]);
+
+    // Reverse the expression and swap parentheses
+    let reversed_expr: Vec<&str> = expression.iter().rev().map(|token| {
+        match token.as_str() {
+            "(" => ")",
+            ")" => "(",
+            "[" => "]",
+            "]" => "[",
+            "{" => "}",
+            "}" => "{",
+            _ => token.as_str(), // Directly return a reference to the string slice
+        }
+    }).collect();
+
+    for token in &reversed_expr {
+        if token.chars().all(|c| c.is_numeric()) {
+            output.push(*token); // Push the reference
+        } else if *token == "(" || *token == "[" || *token == "{" {
+            stack.push_back(*token); // Push the reference
+        } else if *token == ")" || *token == "]" || *token == "}" {
+            while let Some(&top) = stack.back() {
+                if (top == "(" && *token == ")") || (top == "[" && *token == "]") || (top == "{" && *token == "}") {
+                    break;
+                }
+                output.push(top); // Use the reference from stack
+                stack.pop_back();
+            }
+            stack.pop_back(); // Remove the opening parenthesis/bracket/braces
+        } else {
+            while let Some(&top) = stack.back() {
+                if precedence[top] > precedence[token] {
+                    output.push(top); // Use the reference from stack
+                    stack.pop_back();
+                } else {
+                    break;
+                }
+            }
+            stack.push_back(*token); // Push the reference
+        }
+    }
+
+    while let Some(op) = stack.pop_back() {
+        output.push(op); // Use the reference from stack
+    }
+
+    output.reverse();
+    
+    return output;
 }
+
+
 
 fn evaluate_postfix(expression: Vec<&str>) -> f64 {
     let mut stack: Vec<f64> = Vec::new();
@@ -198,11 +253,11 @@ fn evaluate_postfix(expression: Vec<&str>) -> f64 {
     stack.pop().expect("Invalid expression")
 }
     
-/*expression: &[&str]
+/*
 entregar programa en eq:
 cuando el usuario le ponga una expresion infija
 1. evaluar si la expresion esta correctamente escrita [DONE]
-2. si esta correctamente escrita, debe de mostrarme su notacion (dar en prefija postfija infija)
+2. si esta correctamente escrita, debe de mostrarme su notacion (dar en prefija postfija infija) [DONE]
 3.- evaluar la expresion (en postfija obvio) [DONE]
 4.- debe permitir agrupadores (parentesis, corchete, llave) [DONE]
 5.- permitir suma resta division multiplicacion potencia raiz [DONE]
